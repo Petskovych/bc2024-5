@@ -1,28 +1,48 @@
-const commander = require('commander');
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+const notes = {};
 
-const program = new commander.Command();
-program
-  .requiredOption('-h, --host <type>', 'Server host')
-  .requiredOption('-p, --port <number>', 'Server port')
-  .requiredOption('-c, --cache <path>', 'Cache directory')
-  .parse(process.argv);
+app.get('/notes/:name', (req, res) => {
+  const noteName = req.params.name;
+  if (!notes[noteName]) {
+    return res.status(404).send('Not found');
+  }
+  res.send(notes[noteName]);
+});
 
-const options = program.opts();
+app.put('/notes/:name', express.text(), (req, res) => {
+  const noteName = req.params.name;
+  if (!notes[noteName]) {
+    return res.status(404).send('Not found');
+  }
+  notes[noteName] = req.body;
+  res.send('Note updated');
+});
 
-// Перевірка параметрів
-if (!fs.existsSync(options.cache)) {
-  console.error('Error: Cache directory does not exist');
-  process.exit(1);
-}
+app.delete('/notes/:name', (req, res) => {
+  const noteName = req.params.name;
+  if (!notes[noteName]) {
+    return res.status(404).send('Not found');
+  }
+  delete notes[noteName];
+  res.send('Note deleted');
+});
 
-const app = express();
-const cacheDir = path.resolve(options.cache);
+app.get('/notes', (req, res) => {
+  const noteList = Object.keys(notes).map((name) => ({
+    name,
+    text: notes[name],
+  }));
+  res.json(noteList);
+});
 
-// Логіка додаватиметься далі
+app.post('/write', express.urlencoded({ extended: true }), (req, res) => {
+  const { note_name, note } = req.body;
+  if (notes[note_name]) {
+    return res.status(400).send('Note already exists');
+  }
+  notes[note_name] = note;
+  res.status(201).send('Note created');
+});
 
-app.listen(options.port, options.host, () => {
-  console.log(`Server is running on http://${options.host}:${options.port}`);
+app.get('/UploadForm.html', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'UploadForm.html'));
 });
