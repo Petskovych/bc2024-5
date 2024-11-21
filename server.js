@@ -1,48 +1,47 @@
-const notes = {};
+const express = require('express'); // імпортуємо Express
+const app = express(); // створюємо екземпляр Express
 
+const port = process.env.PORT || 3000; // порт для сервера
+
+app.use(express.urlencoded({ extended: true })); // для обробки даних з форм
+app.use(express.json()); // для обробки JSON запитів
+
+// Маршрут GET для отримання нотатки
 app.get('/notes/:name', (req, res) => {
   const noteName = req.params.name;
-  if (!notes[noteName]) {
-    return res.status(404).send('Not found');
-  }
-  res.send(notes[noteName]);
+  // Логіка для пошуку нотатки
+  res.send(`Note: ${noteName}`);
 });
 
-app.put('/notes/:name', express.text(), (req, res) => {
+// Маршрут PUT для оновлення нотатки
+app.put('/notes/:name', (req, res) => {
   const noteName = req.params.name;
-  if (!notes[noteName]) {
-    return res.status(404).send('Not found');
-  }
-  notes[noteName] = req.body;
-  res.send('Note updated');
+  const newText = req.body.text;
+  // Логіка для оновлення нотатки
+  res.send(`Updated note: ${noteName} with new text: ${newText}`);
 });
 
+// Маршрут DELETE для видалення нотатки
 app.delete('/notes/:name', (req, res) => {
   const noteName = req.params.name;
-  if (!notes[noteName]) {
-    return res.status(404).send('Not found');
-  }
-  delete notes[noteName];
-  res.send('Note deleted');
+  // Логіка для видалення нотатки
+  res.send(`Deleted note: ${noteName}`);
 });
 
-app.get('/notes', (req, res) => {
-  const noteList = Object.keys(notes).map((name) => ({
-    name,
-    text: notes[name],
-  }));
-  res.json(noteList);
+// Маршрут для створення нової нотатки
+app.post('/write', (req, res) => {
+  const noteName = req.body.note_name;
+  const noteText = req.body.note;
+  // Логіка для створення нової нотатки
+  res.status(201).send(`Created note: ${noteName}`);
 });
 
-app.post('/write', express.urlencoded({ extended: true }), (req, res) => {
-  const { note_name, note } = req.body;
-  if (notes[note_name]) {
-    return res.status(400).send('Note already exists');
-  }
-  notes[note_name] = note;
-  res.status(201).send('Note created');
-});
-
+// Маршрут для HTML форми
 app.get('/UploadForm.html', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'UploadForm.html'));
+  res.sendFile(__dirname + '/UploadForm.html');
+});
+
+// Запуск сервера
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
